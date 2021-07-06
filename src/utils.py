@@ -60,11 +60,12 @@ def get_start_index(indices1: List[int], indices2: List[int]):
 
 
 class MyDataSet(dataset.Dataset):
-    def __init__(self, file: str, transformer: str, batch_size: int = 32, shuffle=True, max_length: int = 128):
+    def __init__(self, file: str, transformer: str, batch_size: int = 32, shuffle=True, max_length: int = 128, device=None):
         self.file = file
         self.batch_size = batch_size
         self.shuffle = shuffle
         self.max_length = max_length
+        self.device = device
 
         self.tokenizer = AutoTokenizer.from_pretrained(transformer)
         self.label_map = get_labels()
@@ -94,11 +95,11 @@ class MyDataSet(dataset.Dataset):
             end_index = start_index + len(entity_input_ids)
             label_mask[start_index, end_index] = entity_type_id
         return (
-            torch.tensor(text_embed['input_ids'], dtype=torch.long),
-            torch.tensor(text_embed['token_type_ids'], dtype=torch.long),
-            torch.tensor(text_embed['attention_mask'], dtype=torch.long),
-            torch.tensor(mask, dtype=torch.long),
-            label_mask
+            torch.tensor(text_embed['input_ids'], dtype=torch.long, device=self.device),
+            torch.tensor(text_embed['token_type_ids'], dtype=torch.long, device=self.device),
+            torch.tensor(text_embed['attention_mask'], dtype=torch.long, device=self.device),
+            torch.tensor(mask, dtype=torch.long, device=self.device),
+            label_mask.to(self.device)
         )
 
     def __len__(self):

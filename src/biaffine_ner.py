@@ -80,7 +80,8 @@ class BiaffineNer(object):
         return MyDataSet(
             file=file, transformer=transformer,
             batch_size=batch_size, shuffle=shuffle,
-            max_length=max_length
+            max_length=max_length,
+            device=self.device
         ).to_dataloader()
 
     def build_metrics(self):
@@ -164,15 +165,15 @@ class BiaffineNer(object):
             input_ids, token_type_ids, attention_mask, mask, label_mask = batch
 
             y_pred = self.model(
-                input_ids=input_ids.to(self.device),
-                token_type_ids=token_type_ids.to(self.device),
-                attention_mask=attention_mask.to(self.device)
+                input_ids=input_ids,
+                token_type_ids=token_type_ids,
+                attention_mask=attention_mask
             )
             loss = self.compute_loss(
                 criterion=criterion,
                 y_pred=y_pred,
-                y_true=label_mask.to(self.device),
-                mask=mask.to(self.device)
+                y_true=label_mask,
+                mask=mask
             )
             total_loss += loss.item()
             loss.backward()
@@ -209,18 +210,18 @@ class BiaffineNer(object):
             input_ids, token_type_ids, attention_mask, mask, label_mask = batch
 
             y_pred = self.model(
-                input_ids=input_ids.to(self.device),
-                token_type_ids=token_type_ids.to(self.device),
-                attention_mask=attention_mask.to(self.device)
+                input_ids=input_ids,
+                token_type_ids=token_type_ids,
+                attention_mask=attention_mask
             )
             loss = self.compute_loss(
                 criterion=criterion,
                 y_pred=y_pred,
-                y_true=label_mask.to(self.device),
-                mask=mask.to(self.device)
+                y_true=label_mask,
+                mask=mask
             )
             total_loss += loss.item()
-            metrics.step(y_true=label_mask.to(self.device), y_pred=y_pred)
+            metrics.step(y_true=label_mask, y_pred=y_pred)
 
         return total_loss, metrics.summary()
 
@@ -257,9 +258,9 @@ class BiaffineNer(object):
             input_ids, token_type_ids, attention_mask, mask, label_mask = batch
 
             y_pred = self.model(
-                input_ids=input_ids.to(self.device),
-                token_type_ids=token_type_ids.to(self.device),
-                attention_mask=attention_mask.to(self.device)
+                input_ids=input_ids,
+                token_type_ids=token_type_ids,
+                attention_mask=attention_mask
             )
 
             y_pred = y_pred.argmax(-1).to('cpu')

@@ -40,4 +40,4 @@ class Metrics(object):
         return precision, recall, f1
 
     def summary(self):
-        return self.precision, self.recall, self.f1
+        return self.precision / self.steps, self.recall / self.steps, self.f1 / self.steps
