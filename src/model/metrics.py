@@ -21,8 +21,8 @@ def cal_metrics(y_preds, y_trues):
     y_preds_labels, y_preds_count = y_preds.unique(return_counts=True)
     y_trues_labels, y_trues_count = y_trues.unique(return_counts=True)
 
-    corrects = torch.eq(y_preds, y_trues)
-    corrects_labels, corrects_count = torch.mul(corrects, y_trues).unique(return_counts=True)
+    corrects_mask = torch.eq(y_preds, y_trues)
+    corrects_labels, corrects_count = y_trues[corrects_mask].unique(return_counts=True)
 
     y_preds_map = dict(zip(y_preds_labels.tolist(), y_preds_count.tolist()))
     y_true_map = dict(zip(y_trues_labels.tolist(), y_trues_count.tolist()))
