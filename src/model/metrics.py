@@ -27,15 +27,17 @@ def cal_metrics(y_preds, y_trues):
     y_preds_map = dict(zip(y_preds_labels.tolist(), y_preds_count.tolist()))
     y_true_map = dict(zip(y_trues_labels.tolist(), y_trues_count.tolist()))
     corrects_map = dict(zip(corrects_labels.tolist(), corrects_count.tolist()))
-    precision, recall = 0, 0
-
+    precision, recall, f1 = 0, 0, 0
     for label in all_labels.tolist():
-        precision += (corrects_map.get(label, 0) / (y_preds_map.get(label, 0) + 1e-8))
-        recall += (corrects_map.get(label, 0) / (y_true_map.get(label, 0) + 1e-8))
+        _precision = corrects_map.get(label, 0) / (y_preds_map.get(label, 0) + 1e-8)
+        _recall = corrects_map.get(label, 0) / (y_true_map.get(label, 0) + 1e-8)
+        _f1 = 2 * _precision * _recall / (_precision + _recall + 1e-8)
+        precision += _precision
+        recall += _recall
+        f1 += _f1
 
-    precision, recall = precision / len(all_labels), recall / len(all_labels)
-    f1 = 2 * precision * recall / (precision + recall + 1e-8)
-    return precision, recall, f1
+    all_label_count = len(all_labels)
+    return precision / all_label_count, recall / all_label_count, f1 / all_label_count
 
 
 class Metrics(object):

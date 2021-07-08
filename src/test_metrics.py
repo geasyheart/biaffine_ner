@@ -3,6 +3,7 @@
 import torch
 
 from src.model.metrics import cal_metrics
+from sklearn.metrics import classification_report, f1_score
 
 
 def version1():
@@ -25,6 +26,22 @@ def version1():
 
 predicts = torch.tensor([1, 1, 2, 3, 2, 2, 3, 2, 3])
 trues = torch.tensor([1, 1, 1, 1, 2, 2, 2, 3, 3])
-version1()
+# version1()
 
 print(cal_metrics(torch.tensor(predicts), torch.tensor(trues)))
+print(classification_report(trues, predicts))
+print(f1_score(trues, predicts, average='macro'))
+"""
+              precision    recall  f1-score   support
+
+           1       1.00      0.50      0.67         4
+           2       0.50      0.67      0.57         3
+           3       0.33      0.50      0.40         2
+
+    accuracy                           0.56         9
+   macro avg       0.61      0.56      0.55         9
+weighted avg       0.69      0.56      0.58         9
+
+[0.66666667 0.57142857 0.4       ]
+
+"""
