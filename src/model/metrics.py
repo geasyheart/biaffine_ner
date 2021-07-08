@@ -3,6 +3,41 @@
 import torch
 
 
+def cal_metrics(y_preds, y_trues):
+    """
+
+    :param y_preds:
+    :param y_trues:
+    :return:
+    """
+    y_preds_unique_labels = torch.unique(y_preds)
+    y_trues_unique_labels = torch.unique(y_trues)
+
+    all_labels = torch.cat((y_preds_unique_labels, y_trues_unique_labels)).unique(sorted=True)
+    # ignore 0
+    if 0 in all_labels:
+        all_labels = all_labels[1:]
+
+    y_preds_labels, y_preds_count = y_preds.unique(return_counts=True)
+    y_trues_labels, y_trues_count = y_trues.unique(return_counts=True)
+
+    corrects = torch.eq(y_preds, y_trues)
+    corrects_labels, corrects_count = torch.mul(corrects, y_trues).unique(return_counts=True)
+
+    y_preds_map = dict(zip(y_preds_labels.tolist(), y_preds_count.tolist()))
+    y_true_map = dict(zip(y_trues_labels.tolist(), y_trues_count.tolist()))
+    corrects_map = dict(zip(corrects_labels.tolist(), corrects_count.tolist()))
+    precision, recall = 0, 0
+
+    for label in all_labels.tolist():
+        precision += (corrects_map.get(label, 0) / (y_preds_map.get(label, 0) + 1e-8))
+        recall += (corrects_map.get(label, 0) / (y_true_map.get(label, 0) + 1e-8))
+
+    precision, recall = precision / len(all_labels), recall / len(all_labels)
+    f1 = 2 * precision * recall / (precision + recall + 1e-8)
+    return precision, recall, f1
+
+
 class Metrics(object):
     def __init__(self):
         self.precision = 0.
@@ -10,7 +45,8 @@ class Metrics(object):
         self.f1 = 0.
         self.steps = 0
 
-    def step(self, y_true, y_pred):
+    def old(self, y_true, y_pred):
+        """old."""
         y_pred = y_pred.argmax(axis=-1)
         y_true = y_true.view(-1)
         y_pred = y_pred.view(-1)
@@ -36,6 +72,60 @@ class Metrics(object):
         self.recall += recall
         self.f1 += f1
         self.steps += 1
+
+        return precision, recall, f1
+
+    def version1(self, y_true, y_pred):
+        self.steps += 1
+
+        y_pred = y_pred.argmax(axis=-1)
+        y_true = y_true.view(-1)
+        y_pred = y_pred.view(-1)
+
+        escape_0_y_true = y_true[y_true.not_equal(0)]
+        if escape_0_y_true.size(0) == 0:
+            return 0., 0., 0.
+        escape_0_y_pred = y_pred[y_pred.not_equal(0)]
+        if escape_0_y_pred.size(0) == 0:
+            return 0., 0., 0.
+
+        y_true_min, y_true_max = escape_0_y_true.min(), escape_0_y_true.max()
+
+        rights = [0 for i in torch.arange(y_true_min, y_true_max + 1)]
+        predicts = [0 for i in torch.arange(y_true_min, y_true_max + 1)]
+        totals = [0 for i in torch.arange(y_true_min, y_true_max + 1)]
+        for y1, y2 in zip(y_true, y_pred):
+            if y1 != 0:
+                totals[y1 - 1] += 1
+            if y2 != 0:
+                predicts[y2 - 1] += 1
+            if y1 == y2 and y1 != 0:
+                rights[y1 - 1] += 1
+
+        precision = sum([c / (p + 1e-8) for c, p in zip(rights, predicts)]) / (len(predicts) + 1e-8)
+        recall = sum([c / (t + 1e-8) for c, t in zip(rights, totals)]) / (len(totals) + 1e-8)
+
+        f1 = 2 * precision * recall / (precision + recall + 1e-8)
+
+        self.precision += precision
+        self.recall += recall
+        self.f1 += f1
+
+        return precision, recall, f1
+
+    def step(self, y_true, y_pred):
+        """version2"""
+        self.steps += 1
+
+        y_pred = y_pred.argmax(axis=-1)
+        y_trues = y_true.view(-1)
+        y_preds = y_pred.view(-1)
+
+        precision, recall, f1 = cal_metrics(y_preds=y_preds, y_trues=y_trues)
+
+        self.precision += precision
+        self.recall += recall
+        self.f1 += f1
 
         return precision, recall, f1
 
