@@ -13,7 +13,7 @@ from transformers.optimization import get_linear_schedule_with_warmup, AdamW
 
 from src.model import BiaffineNerModel
 from src.model.metrics import Metrics
-from src.utils import MyDataSet, get_labels
+from src.utils import MyDataSet, get_labels, logger
 
 
 class BiaffineNer(object):
@@ -147,7 +147,7 @@ class BiaffineNer(object):
                 optimizer=optimizer, scheduler=scheduler
             )
             dev_loss, (precision, recall, f1) = self.evaluate_dataloader(dev=dev_dataloader, criterion=criterion)
-            print(
+            logger.info(
                 f'Epoch {epoch}, train loss: {fit_loss:.4f}, dev loss: {dev_loss:.4f}, dev precision: {precision:.4f}, dev recall: {recall:.4f}, dev f1:{f1:.4f}'
             )
 

@@ -2,12 +2,31 @@
 #
 import json
 import os
+import sys
 from typing import Dict, Iterable, List
 
 import torch
 from torch.utils.data import dataset, dataloader
 from torch.utils.data.dataset import T_co
 from transformers import AutoTokenizer
+import logging
+
+
+def get_logger():
+    logger = logging.getLogger('biaffine')
+    logger.setLevel(logging.INFO)
+    fmt = '%(asctime)s %(filename)s [line:%(lineno)d] %(levelname)s %(message)s'
+    file_handler = logging.FileHandler(filename='run.log')
+    stream_handler = logging.StreamHandler(sys.stdout)
+    file_handler.setFormatter(logging.Formatter(fmt))
+    stream_handler.setFormatter(logging.Formatter(fmt))
+    logger.addHandler(file_handler)
+    logger.addHandler(stream_handler)
+
+    return logger
+
+
+logger = get_logger()
 
 DATA_PATH = os.path.join(
     os.path.dirname(
@@ -60,7 +79,8 @@ def get_start_index(indices1: List[int], indices2: List[int]):
 
 
 class MyDataSet(dataset.Dataset):
-    def __init__(self, file: str, transformer: str, batch_size: int = 32, shuffle=True, max_length: int = 128, device=None):
+    def __init__(self, file: str, transformer: str, batch_size: int = 32, shuffle=True, max_length: int = 128,
+                 device=None):
         self.file = file
         self.batch_size = batch_size
         self.shuffle = shuffle
