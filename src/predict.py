@@ -6,6 +6,5 @@ from src.utils import TEST_FILE
 bn = biaffine_ner.BiaffineNer()
 bn.predict(
     file=TEST_FILE,
-    transformer='ckiplab/albert-tiny-chinese',
-    sequence_length=128
+    transformer='bert-base-chinese',
 )

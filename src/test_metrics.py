@@ -3,7 +3,7 @@
 import torch
 
 from src.model.metrics import cal_metrics
-from sklearn.metrics import classification_report, f1_score
+from sklearn.metrics import classification_report, f1_score, precision_score, recall_score
 
 
 def version1():
@@ -24,13 +24,14 @@ def version1():
     print(p_, r_)
 
 
-predicts = torch.tensor([1, 1, 2, 3, 2, 2, 3, 2, 3])
-trues = torch.tensor([1, 1, 1, 1, 2, 2, 2, 3, 3])
+predicts = torch.tensor([1, 1, 2, 3, 2, 2, 3, 2, 3, 0, 0])
+trues = torch.tensor([1, 1, 1, 1, 2, 2, 2, 3, 3, 0, 0])
 # version1()
 
 print(cal_metrics(torch.tensor(predicts), torch.tensor(trues)))
-print(classification_report(trues, predicts))
-print(f1_score(trues, predicts, average='macro'))
+# print(classification_report(trues, predicts))
+# labels：指定label，比如0不参与计算，就可以忽略掉
+print(precision_score(trues, predicts, average='macro', labels=[1,2,3]), recall_score(trues, predicts, average='macro', labels=[1,2,3]), f1_score(trues, predicts, average='macro', labels=[1,2,3]))
 """
               precision    recall  f1-score   support
 

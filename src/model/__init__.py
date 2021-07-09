@@ -4,6 +4,7 @@ from torch import nn
 from transformers import AutoModel
 
 from src.model.biaffine import Biaffine
+from src.model.mlp import MLP
 
 
 class BiaffineNerModel(nn.Module):
@@ -12,8 +13,10 @@ class BiaffineNerModel(nn.Module):
         super(BiaffineNerModel, self).__init__()
         self.encoder = AutoModel.from_pretrained(transformer)
 
-        self.start_layer = nn.Linear(in_features=self.encoder.config.hidden_size, out_features=sequence_length)
-        self.end_layer = nn.Linear(in_features=self.encoder.config.hidden_size, out_features=sequence_length)
+        # self.start_layer = nn.Linear(in_features=self.encoder.config.hidden_size, out_features=sequence_length)
+        # self.end_layer = nn.Linear(in_features=self.encoder.config.hidden_size, out_features=sequence_length)
+        self.start_layer = MLP(n_in=self.encoder.config.hidden_size, n_out=sequence_length, dropout=0.33)
+        self.end_layer = MLP(n_in=self.encoder.config.hidden_size, n_out=sequence_length, dropout=0.33)
 
         self.biaffine = Biaffine(n_in=sequence_length, n_out=n_labels, bias_x=True, bias_y=True)
 

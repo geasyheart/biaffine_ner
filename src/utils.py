@@ -94,7 +94,7 @@ class MyDataSet(dataset.Dataset):
     def __getitem__(self, index) -> T_co:
         line = self.datas[index]
         text, entity_list = line['text'], line['entity_list']
-        text_embed = self.tokenizer.encode_plus(text=text, pad_to_max_length=True, max_length=self.max_length)
+        text_embed = self.tokenizer.encode_plus(text=text, padding="max_length", max_length=self.max_length, truncation=True)
 
         mask = [text_embed['attention_mask'] for i in range(sum(text_embed['attention_mask']))]
         line_zeros = [0] * self.max_length

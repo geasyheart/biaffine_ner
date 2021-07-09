@@ -1,6 +1,11 @@
 # -*- coding: utf8 -*-
 #
 import torch
+from sklearn.metrics import f1_score, precision_score, recall_score
+
+from src.utils import get_labels
+
+ALL_LABELS = list(get_labels().values())
 
 
 def cal_metrics(y_preds, y_trues):
@@ -123,8 +128,12 @@ class Metrics(object):
         y_trues = y_true.view(-1)
         y_preds = y_pred.view(-1)
 
-        precision, recall, f1 = cal_metrics(y_preds=y_preds, y_trues=y_trues)
-
+        # precision, recall, f1 = cal_metrics(y_preds=y_preds, y_trues=y_trues)
+        y_trues = y_trues.to('cpu')
+        y_preds = y_preds.to('cpu')
+        precision = precision_score(y_trues, y_preds, average='macro', zero_division=0, labels=ALL_LABELS)
+        recall = recall_score(y_trues, y_preds, average='macro', zero_division=0, labels=ALL_LABELS)
+        f1 = f1_score(y_trues, y_preds, average='macro', zero_division=0, labels=ALL_LABELS)
         self.precision += precision
         self.recall += recall
         self.f1 += f1
