@@ -15,6 +15,7 @@ class BiaffineNerModel(nn.Module):
 
         # self.start_layer = nn.Linear(in_features=self.encoder.config.hidden_size, out_features=sequence_length)
         # self.end_layer = nn.Linear(in_features=self.encoder.config.hidden_size, out_features=sequence_length)
+        # todo: alnlp self.start_layer = nn.Bidirectional(nn.Linear())
         self.start_layer = MLP(n_in=self.encoder.config.hidden_size, n_out=sequence_length, dropout=0.33)
         self.end_layer = MLP(n_in=self.encoder.config.hidden_size, n_out=sequence_length, dropout=0.33)
 
