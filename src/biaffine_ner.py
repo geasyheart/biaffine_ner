@@ -24,6 +24,8 @@ class BiaffineNer(object):
         self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
     def build_model(self, transformer: str, sequence_length: int, n_labels: int):
+        # 更改大些效果会更好
+        sequence_length = 300
         model = BiaffineNerModel(
             transformer=transformer,
             sequence_length=sequence_length,
