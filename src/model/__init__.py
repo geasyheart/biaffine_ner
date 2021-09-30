@@ -13,16 +13,13 @@ class BiaffineNerModel(nn.Module):
         super(BiaffineNerModel, self).__init__()
         self.encoder = AutoModel.from_pretrained(transformer)
 
-        # self.start_layer = nn.Linear(in_features=self.encoder.config.hidden_size, out_features=sequence_length)
-        # self.end_layer = nn.Linear(in_features=self.encoder.config.hidden_size, out_features=sequence_length)
-        # todo: alnlp self.start_layer = nn.Bidirectional(nn.Linear())
         self.start_layer = MLP(n_in=self.encoder.config.hidden_size, n_out=sequence_length, dropout=0.33)
         self.end_layer = MLP(n_in=self.encoder.config.hidden_size, n_out=sequence_length, dropout=0.33)
 
         self.biaffine = Biaffine(n_in=sequence_length, n_out=n_labels, bias_x=True, bias_y=True)
 
-    def forward(self, input_ids, token_type_ids, attention_mask, ):
-        bert_out = self.encoder(input_ids=input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask)
+    def forward(self, input_ids):
+        bert_out = self.encoder(input_ids=input_ids)
         start_embed = self.start_layer(bert_out[0])
         end_embed = self.end_layer(bert_out[0])
 

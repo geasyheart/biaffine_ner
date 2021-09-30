@@ -13,7 +13,8 @@ from transformers.optimization import get_linear_schedule_with_warmup, AdamW
 
 from src.model import BiaffineNerModel
 from src.model.metrics import Metrics
-from src.utils import MyDataSet, get_labels, logger
+from src.transform import Transform1DataSet, get_labels
+from src.utils import logger
 
 
 class BiaffineNer(object):
@@ -25,10 +26,9 @@ class BiaffineNer(object):
 
     def build_model(self, transformer: str, sequence_length: int, n_labels: int):
         # 更改大些效果会更好
-        sequence_length = 300
         model = BiaffineNerModel(
             transformer=transformer,
-            sequence_length=sequence_length,
+            sequence_length=300,
             n_labels=n_labels
         )
         self.model = model
@@ -79,7 +79,7 @@ class BiaffineNer(object):
         return optimizer, scheduler
 
     def build_dataloader(self, file: str, transformer: str, batch_size: int = 32, shuffle=True, max_length=128):
-        return MyDataSet(
+        return Transform1DataSet(
             file=file, transformer=transformer,
             batch_size=batch_size, shuffle=shuffle,
             max_length=max_length,
@@ -118,7 +118,7 @@ class BiaffineNer(object):
                                                shuffle=False)
 
         model = self.build_model(transformer=transformer, sequence_length=sequence_length,
-                                 n_labels=len(get_labels()) + 1)
+                                 n_labels=len(get_labels()))
         model.to(self.device)
 
         criterion = self.build_criterion()
@@ -164,17 +164,14 @@ class BiaffineNer(object):
         self.model.train()
         total_loss = 0
         for batch in tqdm(train):
-            input_ids, token_type_ids, attention_mask, mask, label_mask = batch
-
+            input_ids, label_ids, mask = batch
             y_pred = self.model(
                 input_ids=input_ids,
-                token_type_ids=token_type_ids,
-                attention_mask=attention_mask
             )
             loss = self.compute_loss(
                 criterion=criterion,
                 y_pred=y_pred,
-                y_true=label_mask,
+                y_true=label_ids,
                 mask=mask
             )
             total_loss += loss.item()
@@ -209,21 +206,18 @@ class BiaffineNer(object):
         metrics = Metrics()
         total_loss = 0
         for batch in tqdm(dev):
-            input_ids, token_type_ids, attention_mask, mask, label_mask = batch
-
+            input_ids, label_ids, mask = batch
             y_pred = self.model(
                 input_ids=input_ids,
-                token_type_ids=token_type_ids,
-                attention_mask=attention_mask
             )
             loss = self.compute_loss(
                 criterion=criterion,
                 y_pred=y_pred,
-                y_true=label_mask,
+                y_true=label_ids,
                 mask=mask
             )
             total_loss += loss.item()
-            metrics.step(y_true=label_mask, y_pred=y_pred)
+            metrics.step(y_true=label_ids, y_pred=y_pred, mask=mask)
 
         return total_loss, metrics.summary()
 
