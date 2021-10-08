@@ -2,7 +2,7 @@
 #
 import torch
 from sklearn.metrics import f1_score, precision_score, recall_score, classification_report
-
+from umetrics import MacroMetrics
 from src.transform import get_labels
 
 ALL_LABELS = list(get_labels().values())
@@ -47,86 +47,10 @@ def cal_metrics(y_preds, y_trues):
 
 class Metrics(object):
     def __init__(self):
-        self.precision = 0.
-        self.recall = 0.
-        self.f1 = 0.
-        self.steps = 0
-
-        self.y_trues = []
-        self.y_preds = []
-
-    def old(self, y_true, y_pred):
-        """old."""
-        y_pred = y_pred.argmax(axis=-1)
-        y_true = y_true.view(-1)
-        y_pred = y_pred.view(-1)
-
-        correct = torch.eq(y_true, y_pred)
-
-        # escape zero.
-        ones = torch.ones_like(y_pred)
-        zeros = torch.zeros_like(y_pred)
-        y_pred = torch.where(y_pred < 1, zeros, ones)
-
-        ones = torch.ones_like(y_true)
-        zeros = torch.zeros_like(y_true)
-        y_true = torch.where(y_true < 1, zeros, ones)
-
-        correct = torch.mul(correct, y_true)
-
-        precision = torch.sum(correct) / (torch.sum(y_pred) + 1e-8)
-        recall = torch.sum(correct) / (torch.sum(y_true) + 1e-8)
-        f1 = 2 * recall * precision / (precision + recall + 1e-8)
-
-        self.precision += precision
-        self.recall += recall
-        self.f1 += f1
-        self.steps += 1
-
-        return precision, recall, f1
-
-    def version1(self, y_true, y_pred):
-        self.steps += 1
-
-        y_pred = y_pred.argmax(axis=-1)
-        y_true = y_true.view(-1)
-        y_pred = y_pred.view(-1)
-
-        escape_0_y_true = y_true[y_true.not_equal(0)]
-        if escape_0_y_true.size(0) == 0:
-            return 0., 0., 0.
-        escape_0_y_pred = y_pred[y_pred.not_equal(0)]
-        if escape_0_y_pred.size(0) == 0:
-            return 0., 0., 0.
-
-        y_true_min, y_true_max = escape_0_y_true.min(), escape_0_y_true.max()
-
-        rights = [0 for i in torch.arange(y_true_min, y_true_max + 1)]
-        predicts = [0 for i in torch.arange(y_true_min, y_true_max + 1)]
-        totals = [0 for i in torch.arange(y_true_min, y_true_max + 1)]
-        for y1, y2 in zip(y_true, y_pred):
-            if y1 != 0:
-                totals[y1 - 1] += 1
-            if y2 != 0:
-                predicts[y2 - 1] += 1
-            if y1 == y2 and y1 != 0:
-                rights[y1 - 1] += 1
-
-        precision = sum([c / (p + 1e-8) for c, p in zip(rights, predicts)]) / (len(predicts) + 1e-8)
-        recall = sum([c / (t + 1e-8) for c, t in zip(rights, totals)]) / (len(totals) + 1e-8)
-
-        f1 = 2 * precision * recall / (precision + recall + 1e-8)
-
-        self.precision += precision
-        self.recall += recall
-        self.f1 += f1
-
-        return precision, recall, f1
+        self.metrics = MacroMetrics(labels=ALL_LABELS)
 
     def step(self, y_true, y_pred, mask):
         """version2"""
-        self.steps += 1
-        # mask = torch.ones_like(y_true).triu().view(-1).to('cpu')
         mask = mask.view(-1).to('cpu')
 
         y_pred = y_pred.argmax(axis=-1)
@@ -136,20 +60,8 @@ class Metrics(object):
         y_trues = y_trues.to('cpu') * mask
         y_preds = y_preds.to('cpu') * mask
 
-        # self.y_trues.extend(y_trues)
-        # self.y_preds.extend(y_preds)
-
-        precision = precision_score(y_trues, y_preds, average='macro', zero_division=0, labels=ALL_LABELS)
-        recall = recall_score(y_trues, y_preds, average='macro', zero_division=0, labels=ALL_LABELS)
-        f1 = f1_score(y_trues, y_preds, average='macro', zero_division=0, labels=ALL_LABELS)
-        self.precision += precision
-        self.recall += recall
-        self.f1 += f1
-        # 嘿嘿，怎么能一次性算完呢？貌似这样太浪费资源了，或者自己写f1喽，算了算了
-        # 话说总结：你说这样的模型效果会好么，如果嵌套多些的话，还能好一些，否则太稀疏了哇。
-        # print(classification_report(y_trues, y_preds, zero_division=0, labels=ALL_LABELS))
-
-        return precision, recall, f1
+        self.metrics.step(y_trues=y_trues.tolist(), y_preds=y_preds.tolist())
 
     def summary(self):
-        return self.precision / self.steps, self.recall / self.steps, self.f1 / self.steps
+        self.metrics.classification_report()
+        return self.metrics.precision_score(), self.metrics.recall_score(), self.metrics.f1_score()

@@ -104,7 +104,7 @@ class BiaffineNer(object):
 
     def fit(
             self, train_data, dev_data, transformer: str,
-            sequence_length=128, epochs=500,
+            sequence_length=128, epochs=100,
             batch_size: int = 32,
             num_warmup_steps=0.1,
     ):
