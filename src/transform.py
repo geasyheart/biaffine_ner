@@ -32,7 +32,7 @@ def read_tsv_as_sentence(file_path, delimiter='\t'):
 def get_start_and_end_indices(labels: List[str]):
     def _get_end_index(start_index):
         c = 0
-        for ca in labels[start_index+1:]:
+        for ca in labels[start_index + 1:]:
             if ca.startswith('M') or ca.startswith('E'):
                 c += 1
             else:
@@ -46,6 +46,9 @@ def get_start_and_end_indices(labels: List[str]):
             label = label_map[char]
             end_index = _get_end_index(start_index=index)
             indices.append(((index, end_index), label))
+        elif char.startswith('S'):
+            label = label_map[char]
+            indices.append(((index, index), label))
     return indices
 
 

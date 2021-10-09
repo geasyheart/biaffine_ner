@@ -3,7 +3,7 @@
 import math
 import random
 from collections import defaultdict
-from typing import Optional, List
+from typing import Optional
 
 import numpy as np
 import torch
@@ -123,7 +123,7 @@ class BiaffineNer(object):
 
         criterion = self.build_criterion()
         optimizer, scheduler = self.build_optimizer(
-            transformer_lr=1e-5,
+            transformer_lr=1e-4,
             transformer_weight_decay=None,
             num_warmup_steps=num_warmup_steps,
             num_training_steps=len(train_dataloader) * epochs,
@@ -150,7 +150,7 @@ class BiaffineNer(object):
             )
             dev_loss, (precision, recall, f1) = self.evaluate_dataloader(dev=dev_dataloader, criterion=criterion)
             logger.info(
-                f'Epoch {epoch}, train loss: {fit_loss:.4f}, dev loss: {dev_loss:.4f}, dev precision: {precision:.4f}, dev recall: {recall:.4f}, dev f1:{f1:.4f}'
+                f'Epoch {epoch},lr: {scheduler.get_last_lr()[0]:.4e} train loss: {fit_loss:.4f}, dev loss: {dev_loss:.4f}, dev precision: {precision:.4f}, dev recall: {recall:.4f}, dev f1:{f1:.4f}'
             )
 
             if dev_loss < best_loss:
@@ -233,7 +233,7 @@ class BiaffineNer(object):
         if self.model is None:
             label_ids = get_labels()
             id_labels = {v: k for k, v in label_ids.items()}
-            self.build_model(transformer=transformer, sequence_length=sequence_length, n_labels=len(label_ids) + 1)
+            self.build_model(transformer=transformer, sequence_length=sequence_length, n_labels=len(label_ids))
             self.load_weights(save_path='savepoints/old_f1.pt')
 
             self.model.to(self.device)
@@ -251,25 +251,14 @@ class BiaffineNer(object):
 
         results = []
         for batch in dataloader:
-            input_ids, token_type_ids, attention_mask, mask, label_mask = batch
-
+            input_ids, label_ids, mask = batch
             y_pred = self.model(
                 input_ids=input_ids,
-                token_type_ids=token_type_ids,
-                attention_mask=attention_mask
             )
 
-            y_pred = y_pred.argmax(-1).to('cpu')
+            y_pred = y_pred.argmax(-1)
 
-            for batch_index in range(y_pred.size(0)):
-                single_result = []
-
-                y_pred_indices = np.argwhere(y_pred[batch_index])
-
-                for i in range(y_pred_indices.shape[-1]):
-                    start, end = y_pred_indices[:, i]
-                    argument: List[str] = self.tokenizer.convert_ids_to_tokens(input_ids[batch_index][start:end])
-                    argument_type = id_labels.get(int(y_pred[batch_index][start, end]))
-                    single_result.append({'type': argument_type, 'argument': argument})
-                results.append(single_result)
+            # np.argwhere
+            if label_ids.sum() != 0 or y_pred.sum() != 0:
+                print("真实标签：", torch.nonzero(label_ids), "\n预测标签：", torch.nonzero(y_pred))
         return results
