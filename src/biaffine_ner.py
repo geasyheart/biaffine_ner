@@ -123,7 +123,7 @@ class BiaffineNer(object):
 
         criterion = self.build_criterion()
         optimizer, scheduler = self.build_optimizer(
-            transformer_lr=1e-5,
+            transformer_lr=1e-4,
             transformer_weight_decay=None,
             num_warmup_steps=num_warmup_steps,
             num_training_steps=len(train_dataloader) * epochs,
@@ -150,7 +150,7 @@ class BiaffineNer(object):
             )
             dev_loss, (precision, recall, f1) = self.evaluate_dataloader(dev=dev_dataloader, criterion=criterion)
             logger.info(
-                f'Epoch {epoch}, train loss: {fit_loss:.4f}, dev loss: {dev_loss:.4f}, dev precision: {precision:.4f}, dev recall: {recall:.4f}, dev f1:{f1:.4f}'
+                f'Epoch {epoch},lr: {scheduler.get_last_lr()[0]:.4e} train loss: {fit_loss:.4f}, dev loss: {dev_loss:.4f}, dev precision: {precision:.4f}, dev recall: {recall:.4f}, dev f1:{f1:.4f}'
             )
 
             if dev_loss < best_loss:
