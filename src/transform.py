@@ -5,7 +5,6 @@ import os
 from typing import List
 
 import torch
-from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import dataset, dataloader
 from transformers import AutoTokenizer
 
@@ -88,9 +87,10 @@ class Transform1DataSet(dataset.Dataset):
         labels = [i[1] for i in line]
 
         input_ids = [self.tokenizer.cls_token_id] + \
-                     self.tokenizer.convert_tokens_to_ids(tokens)[:self.max_length - 2] + \
+                    self.tokenizer.convert_tokens_to_ids(tokens)[:self.max_length - 2] + \
                     [self.tokenizer.sep_token_id]
-        input_ids = torch.tensor(input_ids + (self.max_length - len(input_ids)) * [self.tokenizer.pad_token_id], dtype=torch.long)
+        input_ids = torch.tensor(input_ids + (self.max_length - len(input_ids)) * [self.tokenizer.pad_token_id],
+                                 dtype=torch.long)
 
         label_id_matrix = torch.zeros(self.max_length, self.max_length, dtype=torch.long)
         label_indices = get_start_and_end_indices(labels=labels)
