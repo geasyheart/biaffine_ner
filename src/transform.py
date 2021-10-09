@@ -5,7 +5,6 @@ import os
 from typing import List
 
 import torch
-from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import dataset, dataloader
 from transformers import AutoTokenizer
 
@@ -32,7 +31,7 @@ def read_tsv_as_sentence(file_path, delimiter='\t'):
 def get_start_and_end_indices(labels: List[str]):
     def _get_end_index(start_index):
         c = 0
-        for ca in labels[start_index+1:]:
+        for ca in labels[start_index + 1:]:
             if ca.startswith('M') or ca.startswith('E'):
                 c += 1
             else:
@@ -46,6 +45,9 @@ def get_start_and_end_indices(labels: List[str]):
             label = label_map[char]
             end_index = _get_end_index(start_index=index)
             indices.append(((index, end_index), label))
+        elif char.startswith('S'):
+            label = label_map[char]
+            indices.append(((index, index), label))
     return indices
 
 
@@ -85,9 +87,10 @@ class Transform1DataSet(dataset.Dataset):
         labels = [i[1] for i in line]
 
         input_ids = [self.tokenizer.cls_token_id] + \
-                     self.tokenizer.convert_tokens_to_ids(tokens)[:self.max_length - 2] + \
+                    self.tokenizer.convert_tokens_to_ids(tokens)[:self.max_length - 2] + \
                     [self.tokenizer.sep_token_id]
-        input_ids = torch.tensor(input_ids + (self.max_length - len(input_ids)) * [self.tokenizer.pad_token_id], dtype=torch.long)
+        input_ids = torch.tensor(input_ids + (self.max_length - len(input_ids)) * [self.tokenizer.pad_token_id],
+                                 dtype=torch.long)
 
         label_id_matrix = torch.zeros(self.max_length, self.max_length, dtype=torch.long)
         label_indices = get_start_and_end_indices(labels=labels)
