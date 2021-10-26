@@ -7,6 +7,7 @@ from typing import Optional
 
 import numpy as np
 import torch
+from torch import nn
 from tqdm import tqdm
 from transformers import AutoTokenizer
 from transformers.optimization import get_linear_schedule_with_warmup, AdamW
@@ -188,14 +189,15 @@ class BiaffineNer(object):
         scheduler.step()
 
     def compute_loss(self, criterion, y_pred, y_true, mask):
-
+        # NOTE: 可以直接更改成这个
+        # return nn.CrossEntropyLoss(y_pred[mask], y_true[mask])
         y_true = y_true.view(-1)
         y_pred = y_pred.view((-1, y_pred.shape[-1]))
         loss = criterion(input=y_pred, target=y_true)
 
         mask = mask.view(-1)
 
-        loss *= mask
+        loss = loss[mask]
 
         avg_loss = torch.sum(loss) / mask.size(0)
         return avg_loss
